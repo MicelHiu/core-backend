@@ -20,7 +20,7 @@ export class BookingsController {
 
   @UseGuards(RolesGuard)
   @Roles('admin')
-  @Get(':code')
+  @Get('admin/:code')
   getAllBookingDetails(@Param('code') code: string) {
     return this.bookingsService.getAllBookingDetails(code);
   }

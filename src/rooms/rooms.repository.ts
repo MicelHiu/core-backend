@@ -15,8 +15,8 @@ export class RoomsRepository {
         return this.prisma.rooms.findUnique({where: {id}});
     }
 
-    patchRoom(id: string, dto: UpdateRoomDto) {
-        const currentData = this.getRoomById(id);
+    async patchRoom(id: string, dto: UpdateRoomDto) {
+        const currentData = await this.getRoomById(id);
         if(!currentData) return undefined;
         return this.prisma.rooms.update({
             data: dto,

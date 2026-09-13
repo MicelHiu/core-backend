@@ -17,7 +17,7 @@ export class VisitorsRepository {
         return this.prisma.visitors.create({
             data: dto,
             include: {
-                bookings: { select: { code: true, room_id: true, date_play: true } },
+                bookings: { select: { code: true, room_id: true, date_play: true, status: true },  },
             },
         });
     }
@@ -33,7 +33,7 @@ export class VisitorsRepository {
                 } : {}),
             },
             include: {
-                bookings: { select: { code: true, room_id: true, date_play: true } },
+                bookings: { select: { code: true, room_id: true, date_play: true, status: true } },
             },
             orderBy: { checked_in: 'desc' },
         });
@@ -43,7 +43,12 @@ export class VisitorsRepository {
         return this.prisma.visitors.findUnique({
             where: { id },
             include: {
-                bookings: { select: { code: true, room_id: true, date_play: true } },
+                bookings: { 
+                    select: { 
+                        code: true, room_id: true, date_play: true, 
+                        status: true 
+                    } 
+                },
             },
         });
     }
