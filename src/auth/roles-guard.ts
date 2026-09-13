@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
 
@@ -15,8 +15,9 @@ export class RolesGuard implements CanActivate {
 
         //set by JwtAuthGuard, which must run first in @UseGuards
         const {user} = context.switchToHttp().getRequest();
-        console.log('User from token: ', user);
-        console.log('Required roles: ', required);
-        return required.includes(user?.role);
+        if(!required.includes(user?.role)) {
+            throw new ForbiddenException('Forbidden Access');
+        }
+        return true;
     }
 }

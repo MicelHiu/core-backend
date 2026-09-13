@@ -1,4 +1,4 @@
-import { BadGatewayException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CartsRepository } from './carts.repository';
 import { CreateCartDto } from './dto/create-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
@@ -41,7 +41,7 @@ export class CartsService {
         const startMinutes = startH * 60 + startM;
         const endMinutes = endH * 60 + endM;
         const durationMinutes = endMinutes - startMinutes;
-        if (durationMinutes < 0) throw new BadGatewayException('time_end must be after time_start');
+        if (durationMinutes < 0) throw new BadRequestException('time_end must be after time_start');
         return durationMinutes / 60;
     }
     private calculateTotalPrice(
