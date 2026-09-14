@@ -1,6 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateRoomDto } from './create-room.dto';
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsDecimal, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { Decimal } from 'generated/prisma/internal/prismaNamespace';
 
 export class UpdateRoomDto extends PartialType(CreateRoomDto) {
     @IsNotEmpty()
@@ -16,8 +17,8 @@ export class UpdateRoomDto extends PartialType(CreateRoomDto) {
     description!:string;
 
     @IsNotEmpty()
-    @IsNumber()
-    price!:number;
+    @IsDecimal()
+    price!:Decimal;
 
     @IsNotEmpty()
     @IsString()

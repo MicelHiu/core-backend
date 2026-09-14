@@ -14,10 +14,6 @@ export class UpdateCartDto {
     @IsUUID()
     @IsOptional()
     discount_id?: string;      
-
-    @IsDecimal()
-    @IsOptional()
-    discount_value?: Decimal;
     
     @IsDate()
     @IsOptional()
@@ -35,9 +31,5 @@ export class UpdateCartDto {
         message: 'time must be in format HH:mm or HH:mm:ss',
     })
     @IsOptional()
-    time_end?: string;
-
-    @IsDecimal()
-    @IsOptional()
-    total_price?: Decimal;     
+    time_end?: string;  
 }

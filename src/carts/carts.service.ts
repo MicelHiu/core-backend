@@ -3,11 +3,13 @@ import { CartsRepository } from './carts.repository';
 import { CreateCartDto } from './dto/create-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { Decimal } from '@prisma/client/runtime/index-browser';
+import { DiscountsRepository } from 'src/discounts/discounts.repository';
 
 @Injectable()
 export class CartsService {
     constructor(
-        private readonly cartsRepository: CartsRepository
+        private readonly cartsRepository: CartsRepository,
+        private readonly discountsRepository: DiscountsRepository,
     ) {}
     private formatTime(date: Date): string {
         return date.toISOString().substring(11, 19);
@@ -57,6 +59,18 @@ export class CartsService {
         return total;
     }
 
+     // Validasi discount_id ke tabel discounts: harus ada, aktif, dan belum expired.
+    // discount_value TIDAK boleh dipercaya dari client — dihitung ulang di server.
+    private async resolveDiscountValue(discountId?: string): Promise<Decimal | undefined> {
+        if (!discountId) return undefined;
+
+        const discount = await this.discountsRepository.getVisibleDiscountDetails(discountId);
+        if (!discount) throw new NotFoundException('Discount not found or expired');
+        if (!discount.is_active) throw new BadRequestException('Discount is not active');
+
+        return discount.value;
+    }
+
     async createCart(dto: CreateCartDto, userId: string) {
         const roomId = dto.room_id;
         if (!roomId) throw new NotFoundException('Room not found');
@@ -65,11 +79,14 @@ export class CartsService {
         if(!room) throw new NotFoundException('Room not found');
         if(room.stock < 1) throw new NotFoundException('Room is out of stock');
 
+        const discountValue = await this.resolveDiscountValue(dto.discount_id);
+        
         const durationHours = this.calculateDurationHours(dto.time_start, dto.time_end);
-        const totalPrice = this.calculateTotalPrice(room.price, durationHours, dto.quantity, dto.discount_value);
+        const totalPrice = this.calculateTotalPrice(room.price, durationHours, dto.quantity, discountValue);
 
         const cart = await this.cartsRepository.createCart({
-            ...dto, 
+            ...dto,
+            discount_value: discountValue,
             total_price: totalPrice,
             user_id: userId,
         });
@@ -91,13 +108,17 @@ export class CartsService {
         const timeStart = dto.time_start ?? this.formatTime(oldCart.time_start);
         const timeEnd = dto.time_end ?? this.formatTime(oldCart.time_end);
         const quantity = dto.quantity ?? oldCart.quantity;
-        const discountValue = dto.discount_value ?? oldCart.discount_value ?? undefined;
+        // discount_id dikirim -> revalidasi ke tabel discounts.
+        // discount_id tidak dikirim -> pakai discount_value lama dari cart (kalau ada).
+        const discountValue = dto.discount_id
+            ? await this.resolveDiscountValue(dto.discount_id)
+            : (oldCart.discount_value ?? undefined);
 
         const durationHours = this.calculateDurationHours(timeStart, timeEnd);
         const totalPrice = room ? this.calculateTotalPrice(room.price, durationHours, quantity, discountValue) : oldCart.total_price;
 
         const cart = await this.cartsRepository.updateCart(
-            {...dto, total_price: totalPrice},
+            {...dto, discount_value: discountValue, total_price: totalPrice},
             id,
         );
         return this.mapCart(cart);

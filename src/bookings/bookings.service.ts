@@ -6,12 +6,14 @@ import { Decimal } from '@prisma/client/runtime/index-browser';
 import { booking_status } from 'generated/prisma/enums';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { identity } from 'rxjs';
+import { DiscountsRepository } from 'src/discounts/discounts.repository';
 
 @Injectable()
 export class BookingsService {
     constructor(
         private readonly bookingsRepository: BookingRepository,
-        private readonly cartsRepository: CartsRepository
+        private readonly cartsRepository: CartsRepository,
+        private readonly discountsRepository: DiscountsRepository,
     ) {}
     private toTimeDate(date: Date): string {
         return date.toISOString().substring(11, 16);
@@ -62,10 +64,28 @@ export class BookingsService {
         const cart = await this.cartsRepository.getCartById(dto.cart_id, userId );
         if (!cart) throw new NotFoundException('Cart not found');
 
-        // 2. Generate kode booking unik
+        // 2. Kalau cart pakai diskon, re-validasi lagi ke tabel discounts —
+        // diskon bisa saja sudah dimatikan/expired sejak cart dibuat sampai checkout.
+        if (cart.discount_id) {
+            const discount = await this.discountsRepository.getDiscountDetails(cart.discount_id);
+            const now = new Date();
+            const isStillValid =
+                !!discount &&
+                discount.is_active &&
+                discount.valid_from <= now &&
+                discount.valid_until >= now;
+
+            if (!isStillValid) {
+                throw new BadRequestException(
+                    'Discount applied to this cart is no longer active or has expired. Please update your cart.',
+                );
+            }
+        }
+
+        // 3. Generate kode booking unik
         const code = this.generateBookingCode();
 
-        // 3. Buat booking dari data cart + guest info dari popup
+        // 4. Buat booking dari data cart + guest info dari popup
         const booking = await this.bookingsRepository.createBooking({
             code,
             user_id: userId,

@@ -1,6 +1,5 @@
 import { Type } from "class-transformer";
-import { IsDate, IsDecimal, IsNumber, IsOptional, IsString, IsUUID, Matches, Min } from "class-validator"
-import { Decimal } from "generated/prisma/internal/prismaNamespace";
+import { IsDate, IsNumber, IsOptional, IsString, IsUUID, Matches, Min } from "class-validator"
 
 export class CreateCartDto {
     @IsString()
@@ -12,12 +11,8 @@ export class CreateCartDto {
 
     @IsUUID()
     @IsOptional()
-    discount_id?: string;      
+    discount_id?: string;
 
-    @IsDecimal()
-    @IsOptional()
-    discount_value?: Decimal;
-    
     @Type(() => Date)
     @IsDate()
     date_play!: Date;

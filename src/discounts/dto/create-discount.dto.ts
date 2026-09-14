@@ -1,5 +1,5 @@
 
-import { IsBoolean, IsDateString, IsDecimal, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsDateString, IsDecimal, IsNotEmpty, IsString } from "class-validator";
 import { Decimal } from "generated/prisma/internal/prismaNamespace";
 
 export class CreateDiscountDto {
@@ -18,8 +18,4 @@ export class CreateDiscountDto {
     @IsDateString()
     @IsNotEmpty()
     valid_until!: string;
-
-    @IsNotEmpty()
-    @IsBoolean()
-    is_active!: boolean;
 }
