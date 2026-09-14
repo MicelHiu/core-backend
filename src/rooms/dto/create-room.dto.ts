@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsDecimal, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { Decimal } from "generated/prisma/internal/prismaNamespace";
 
 export class CreateRoomDto {
     @IsNotEmpty()
@@ -14,8 +15,8 @@ export class CreateRoomDto {
     description!:string;
 
     @IsNotEmpty()
-    @IsNumber()
-    price!:number;
+    @IsDecimal()
+    price!:Decimal;
 
     @IsNotEmpty()
     @IsString()
