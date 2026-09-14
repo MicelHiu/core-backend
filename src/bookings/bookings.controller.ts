@@ -18,6 +18,13 @@ export class BookingsController {
     return this.bookingsService.getCustomerBookings();
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @Get('admin/:code')
+  getAllBookingDetails(@Param('code') code: string) {
+    return this.bookingsService.getAllBookingDetails(code);
+  }
+
   @Get('current')
   getAllBookings(@CurrentUser() user: {id: string}) {
     return this.bookingsService.getAllBookings(user.id);

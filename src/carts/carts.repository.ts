@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CreateCartDto } from "./dto/create-cart.dto";
 import { UpdateCartDto } from "./dto/update-cart.dto";
@@ -23,7 +23,18 @@ export class CartsRepository {
 
     getCartById(id: string, userId: string) {
         return this.prisma.carts.findUnique({
-            where: {id, user_id: userId}
+            where: {id, user_id: userId},
+            include: {
+                rooms: {
+                    select: {
+                        name: true,
+                        price: true,
+                        type: true,
+                        image: true,
+                        stock: true,
+                    }
+                }
+            }
         });
     }
 
@@ -81,8 +92,16 @@ export class CartsRepository {
     }
 
     async deleteCart(id: string, userId: string) {
-        return this.prisma.carts.delete({
-            where: {id, user_id: userId}
+        const deleted = await this.prisma.carts.delete({
+            where: {id, user_id: userId},
         })
+
+        if(!deleted) throw new NotFoundException('Cart not found');
+        return {
+            deleted,
+            message: 'Cart has been deleted',
+            status: 203,
+            id,
+        }
     }
 }

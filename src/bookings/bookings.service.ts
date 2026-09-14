@@ -40,6 +40,12 @@ export class BookingsService {
         return this.bookingsRepository.getCustomerBookings();
     }
 
+    async getAllBookingDetails(code: string) {
+        const booking = await this.bookingsRepository.getAllBookingDetails(code);
+        if(!booking) throw new NotFoundException('Booking not found');
+        return booking;
+    }
+
     async getAllBookings(userId: string) {
         const data = await this.bookingsRepository.getAllBookings(userId);
         return data.map(booking => this.mapBooking(booking));
@@ -51,10 +57,6 @@ export class BookingsService {
         return this.mapBooking(data);
     }
 
-    /* buat create logicnya: 
-    1. ambil id cart
-    2. generate code booking
-    3. panggil repository create */
     async createBooking(userId: string, dto: CreateBookingDto) {
         // 1. Ambil cart yang mau di-checkout, harus punya user ini
         const cart = await this.cartsRepository.getCartById(dto.cart_id, userId );
@@ -94,8 +96,8 @@ export class BookingsService {
         canceled: [],
     };
 
-    async updateBooking(code: string, userId: string, dto: UpdateBookingDto) {
-        const existing = await this.bookingsRepository.getBookingDetails(code, userId);
+    async updateBooking(userId: string, code: string, dto: UpdateBookingDto) {
+        const existing = await this.bookingsRepository.getAllBookingDetails(code);
         if(!existing) throw new NotFoundException('Booking not found');
 
         if(dto.status && dto.status !== existing.status) {

@@ -18,6 +18,10 @@ export class BookingRepository {
         return this.prisma.bookings.findMany();
     }
 
+    getAllBookingDetails(code: string) {
+        return this.prisma.bookings.findUnique({ where: { code } });
+    }
+
     getAllBookings(userId: string) {
         return this.prisma.bookings.findMany({
             where: { user_id: userId }
