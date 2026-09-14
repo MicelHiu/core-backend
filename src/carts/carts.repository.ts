@@ -54,6 +54,7 @@ export class CartsRepository {
     createCart(dto: Omit<CreateCartDto, 'time_start' | 'time_end'> & {
         user_id: string;
         total_price: Decimal;
+        discount_value?: Decimal;
         time_start: string;
         time_end: string;
     }) {
@@ -77,7 +78,7 @@ export class CartsRepository {
         });
     }
 
-    updateCart(dto: UpdateCartDto, id: string) {
+    updateCart(dto: UpdateCartDto & { total_price?: Decimal; discount_value?: Decimal }, id: string) {
         return this.prisma.carts.update({
             where: { id },
             data: {
