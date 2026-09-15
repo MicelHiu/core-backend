@@ -6,7 +6,10 @@ import { Roles } from 'src/auth/roles-decorator';
 import { CurrentUser } from 'src/auth/current-user.decorator';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('bookings')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('bookings')
 export class BookingsController {
@@ -14,6 +17,7 @@ export class BookingsController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Get()
+  @ApiOperation({ summary: 'Get all customer bookings (admin only)' })
   getCustomerBookings() {
     return this.bookingsService.getCustomerBookings();
   }
@@ -21,21 +25,27 @@ export class BookingsController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Get('admin/:code')
+  @ApiOperation({ summary: 'Get booking details by code (admin only)' })
+  @ApiParam({ name: 'code', description: 'Booking code' })
   getAllBookingDetails(@Param('code') code: string) {
     return this.bookingsService.getAllBookingDetails(code);
   }
 
   @Get('current')
+  @ApiOperation({ summary: "Get the current user's bookings" })
   getAllBookings(@CurrentUser() user: {id: string}) {
     return this.bookingsService.getAllBookings(user.id);
   }
 
   @Get(':code')
+  @ApiOperation({ summary: 'Get booking detail by code' })
+  @ApiParam({ name: 'code', description: 'Booking code' })
   getBookingDetail(@CurrentUser() user: {id: string}, @Param('code') code: string) {
     return this.bookingsService.getBookingDetail(user.id, code);
   }
 
   @Post()
+  @ApiOperation({ summary: 'Create a new booking' })
   createBooking(@CurrentUser() user: {id: string}, @Body() dto: CreateBookingDto) {
     return this.bookingsService.createBooking(user.id, dto);
   }
@@ -43,6 +53,8 @@ export class BookingsController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Patch(':code')
+  @ApiOperation({ summary: 'Update a booking (admin only)' })
+  @ApiParam({ name: 'code', description: 'Booking code' })
   updateBooking(@CurrentUser() user: {id: string}, @Body() dto: UpdateBookingDto, @Param('code') code: string) {
     return this.bookingsService.updateBooking(user.id, code, dto);
   }
