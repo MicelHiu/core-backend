@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import { IsDate, IsDecimal, IsNumber, IsOptional, IsString, IsUUID, Matches, Min } from "class-validator"
 import { Decimal } from "generated/prisma/internal/prismaNamespace";
 
@@ -20,6 +21,7 @@ export class UpdateCartDto {
     discount_id?: string;
 
     @ApiProperty({ example: '2026-09-20', required: false })
+    @Type(() => Date)
     @IsDate()
     @IsOptional()
     date_play?: Date;
