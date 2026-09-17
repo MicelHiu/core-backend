@@ -49,7 +49,7 @@ export class BookingsService {
     async getAllBookingDetails(code: string) {
         const booking = await this.bookingsRepository.getAllBookingDetails(code);
         if(!booking) throw new NotFoundException('Booking not found');
-        return booking;
+        return this.mapBooking(booking);
     }
 
     async getAllBookings(userId: string) {

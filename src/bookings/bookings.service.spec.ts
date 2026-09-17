@@ -109,12 +109,12 @@ describe('BookingsService', () => {
       await expect(service.getAllBookingDetails('unknown')).rejects.toThrow(NotFoundException);
     });
 
-    it('mengembalikan booking kalau ditemukan', async () => {
+    it('mengembalikan booking dengan time_start/time_end diformat', async () => {
       bookingsRepository.getAllBookingDetails.mockResolvedValue(fakeBooking as any);
 
       const result = await service.getAllBookingDetails('BK-20260913-ABCDEF');
 
-      expect(result).toEqual(fakeBooking);
+      expect(result).toEqual({ ...fakeBooking, time_start: '10:00', time_end: '12:00' });
     });
   });
 
