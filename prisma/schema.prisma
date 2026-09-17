@@ -36,9 +36,10 @@ model users {
   points      Int
   created_at  DateTime    @default(now()) @db.Timestamp(6)
 
-  carts       carts[]
-  bookings    bookings[]
-  visitors    visitors[]
+  carts           carts[]
+  bookings        bookings[]
+  visitors        visitors[]
+  activity_logs   activity_logs[]
 }
 
 model rooms {
@@ -106,6 +107,7 @@ model bookings {
   rooms           rooms         @relation(fields: [room_id], references: [id])
   discounts       discounts?    @relation(fields: [discount_id], references: [id])
   visitors        visitors[]
+  activity_logs   activity_logs[]
 }
 
 model visitors {
@@ -120,5 +122,15 @@ model visitors {
   users         users        @relation(fields: [user_id], references: [id], onDelete: Restrict)
 }
 
+model activity_logs {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  booking_code  String
+  admin_id      String          @db.Uuid
+  status        booking_status
+  note          String?
+  created_at    DateTime        @default(now()) @db.Timestamp(6)
 
+  bookings      bookings @relation(fields: [booking_code], references: [code])
+  users         users    @relation(fields: [admin_id], references: [id], onDelete: Restrict)
+}
 

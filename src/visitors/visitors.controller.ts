@@ -1,9 +1,8 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { VisitorsService } from './visitors.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth-guard';
 import { RolesGuard } from 'src/auth/roles-guard';
 import { Roles } from 'src/auth/roles-decorator';
-import { CreateVisitorDto } from './dto/create-visitor.dto';
 import { VisitorListQueryDto, VisitorStatsQueryDto } from './dto/visitor-query.dto';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
@@ -14,12 +13,6 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger'
 @Controller('visitors')
 export class VisitorsController {
   constructor(private readonly visitorsService: VisitorsService) {}
-
-  @Post()
-  @ApiOperation({ summary: 'Check in a visitor (admin only)' })
-  checkIn(@Body() dto: CreateVisitorDto) {
-    return this.visitorsService.checkIn(dto);
-  }
 
   // Harus di atas @Get(':id') supaya "/visitors/stats" tidak ketangkep sebagai id
   @Get('stats')

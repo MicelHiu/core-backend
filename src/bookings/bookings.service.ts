@@ -7,6 +7,8 @@ import { booking_status } from 'generated/prisma/enums';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { identity } from 'rxjs';
 import { DiscountsRepository } from 'src/discounts/discounts.repository';
+import { VisitorsService } from 'src/visitors/visitors.service';
+import { ActivityLogsRepository } from 'src/activity-logs/activity-logs.repository';
 
 @Injectable()
 export class BookingsService {
@@ -14,6 +16,8 @@ export class BookingsService {
         private readonly bookingsRepository: BookingRepository,
         private readonly cartsRepository: CartsRepository,
         private readonly discountsRepository: DiscountsRepository,
+        private readonly visitorsService: VisitorsService,
+        private readonly activityLogsRepository: ActivityLogsRepository,
     ) {}
     private toTimeDate(date: Date): string {
         return date.toISOString().substring(11, 16);
@@ -133,6 +137,29 @@ export class BookingsService {
             ...(dto.status && { status: dto.status }),
         });
 
+        if (existing.status === 'confirmed' && dto.status === 'ongoing') {
+            await this.visitorsService.autoCheckIn({
+                code: existing.code,
+                user_id: existing.user_id,
+                guest_name: existing.guest_name,
+            });
+        }
+
+        if (dto.status && dto.status !== existing.status) {
+            await this.activityLogsRepository.create({
+                booking_code: code,
+                admin_id: userId,
+                status: dto.status,
+                note: dto.note,
+            });
+        }
+
         return this.mapBooking(updated);
+    }
+
+    async getActivityLogs(code: string) {
+        const booking = await this.bookingsRepository.getAllBookingDetails(code);
+        if (!booking) throw new NotFoundException('Booking not found');
+        return this.activityLogsRepository.findByBookingCode(code);
     }
 }

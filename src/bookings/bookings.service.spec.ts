@@ -4,12 +4,16 @@ import { Decimal } from '@prisma/client/runtime/index-browser';
 import { BookingsService } from './bookings.service';
 import { BookingRepository } from './bookings.repository';
 import { CartsRepository } from 'src/carts/carts.repository';
+import { DiscountsRepository } from 'src/discounts/discounts.repository';
+import { VisitorsService } from 'src/visitors/visitors.service';
+import { ActivityLogsRepository } from 'src/activity-logs/activity-logs.repository';
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 describe('BookingsService', () => {
   let service: BookingsService;
   let bookingsRepository: jest.Mocked<BookingRepository>;
   let cartsRepository: jest.Mocked<CartsRepository>;
+  let activityLogsRepository: jest.Mocked<ActivityLogsRepository>;
 
   const fakeCart = {
     id: 'c1',
@@ -61,12 +65,32 @@ describe('BookingsService', () => {
             deleteCart: jest.fn(),
           },
         },
+        {
+          provide: DiscountsRepository,
+          useValue: {
+            getDiscountDetails: jest.fn(),
+          },
+        },
+        {
+          provide: VisitorsService,
+          useValue: {
+            autoCheckIn: jest.fn(),
+          },
+        },
+        {
+          provide: ActivityLogsRepository,
+          useValue: {
+            create: jest.fn(),
+            findByBookingCode: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<BookingsService>(BookingsService);
     bookingsRepository = module.get(BookingRepository);
     cartsRepository = module.get(CartsRepository);
+    activityLogsRepository = module.get(ActivityLogsRepository);
   });
 
   afterEach(() => {
@@ -174,6 +198,40 @@ describe('BookingsService', () => {
       await expect(
         service.updateBooking('u1', fakeBooking.code, { status: 'confirmed' } as any),
       ).resolves.toBeDefined();
+
+      expect(activityLogsRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('mencatat activity log kalau status beneran berubah', async () => {
+      bookingsRepository.getAllBookingDetails.mockResolvedValue(fakeBooking as any); // confirmed
+      bookingsRepository.updateBooking.mockResolvedValue({ ...fakeBooking, status: 'ongoing' } as any);
+
+      await service.updateBooking('u1', fakeBooking.code, { status: 'ongoing', note: 'Sudah dihubungi' } as any);
+
+      expect(activityLogsRepository.create).toHaveBeenCalledWith({
+        booking_code: fakeBooking.code,
+        admin_id: 'u1',
+        status: 'ongoing',
+        note: 'Sudah dihubungi',
+      });
+    });
+  });
+
+  describe('getActivityLogs', () => {
+    it('throw NotFoundException kalau booking tidak ditemukan', async () => {
+      bookingsRepository.getAllBookingDetails.mockResolvedValue(null);
+
+      await expect(service.getActivityLogs('unknown')).rejects.toThrow(NotFoundException);
+    });
+
+    it('mengembalikan daftar log kalau booking ditemukan', async () => {
+      bookingsRepository.getAllBookingDetails.mockResolvedValue(fakeBooking as any);
+      activityLogsRepository.findByBookingCode.mockResolvedValue([{ id: 'l1' }] as any);
+
+      const result = await service.getActivityLogs(fakeBooking.code);
+
+      expect(result).toEqual([{ id: 'l1' }]);
+      expect(activityLogsRepository.findByBookingCode).toHaveBeenCalledWith(fakeBooking.code);
     });
   });
 });

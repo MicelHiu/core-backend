@@ -37,6 +37,15 @@ export class BookingsController {
     return this.bookingsService.getAllBookings(user.id);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @Get(':code/activity-logs')
+  @ApiOperation({ summary: 'Get activity/status-change log history for a booking (admin only)' })
+  @ApiParam({ name: 'code', description: 'Booking code' })
+  getActivityLogs(@Param('code') code: string) {
+    return this.bookingsService.getActivityLogs(code);
+  }
+
   @Get(':code')
   @ApiOperation({ summary: 'Get booking detail by code' })
   @ApiParam({ name: 'code', description: 'Booking code' })

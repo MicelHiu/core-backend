@@ -9,5 +9,6 @@ import { VisitorsRepository } from './visitors.repository';
   imports: [PrismaModule, AuthModule],
   controllers: [VisitorsController],
   providers: [VisitorsService, VisitorsRepository],
+  exports: [VisitorsService],
 })
 export class VisitorsModule {}

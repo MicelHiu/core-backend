@@ -17,4 +17,9 @@ export class UpdateBookingDto {
     @IsOptional()
     @IsEnum(booking_status)
     status?: booking_status;
+
+    @ApiProperty({ example: 'Sudah dikonfirmasi lewat telepon', required: false })
+    @IsString()
+    @IsOptional()
+    note?: string;
 }

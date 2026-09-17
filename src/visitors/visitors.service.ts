@@ -1,28 +1,20 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { VisitorsRepository } from './visitors.repository';
-import { CreateVisitorDto } from './dto/create-visitor.dto';
 import { VisitorListQueryDto, VisitorStatsQueryDto } from './dto/visitor-query.dto';
 
 @Injectable()
 export class VisitorsService {
     constructor(private readonly visitorsRepository: VisitorsRepository) {}
 
-    private readonly checkInAllowedStatus = ['confirmed', 'ongoing'];
-
-    async checkIn(dto: CreateVisitorDto) {
-        const booking = await this.visitorsRepository.getBookingStatus(dto.booking_code);
-        if (!booking) throw new NotFoundException('Booking not found');
-        if (!this.checkInAllowedStatus.includes(booking.status)) {
-            throw new BadRequestException(
-                `Cannot check-in a booking with status '${booking.status}`,
-            );
-        }
+    async autoCheckIn(booking: { code: string; user_id: string; guest_name: string }) {
+        const existing = await this.visitorsRepository.findByBookingCode(booking.code);
+        if (existing) return existing;
 
         return this.visitorsRepository.createVisitor({
-            booking_code: dto.booking_code,
+            booking_code: booking.code,
             user_id: booking.user_id,
-            guest_name: dto.guest_name,
-            checked_in: dto.checked_in ? new Date(dto.checked_in) : new Date(),
+            guest_name: booking.guest_name,
+            checked_in: new Date(),
         });
     }
 

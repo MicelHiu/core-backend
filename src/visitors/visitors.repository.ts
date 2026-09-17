@@ -13,6 +13,12 @@ export class VisitorsRepository {
         });
     }
 
+    findByBookingCode(bookingCode: string) {
+        return this.prisma.visitors.findFirst({
+            where: { booking_code: bookingCode },
+        });
+    }
+
     createVisitor(dto: { booking_code: string; user_id: string; guest_name: string; checked_in: Date }) {
         return this.prisma.visitors.create({
             data: dto,

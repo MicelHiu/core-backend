@@ -22,6 +22,7 @@ describe('BookingsController', () => {
             getBookingDetail: jest.fn(),
             createBooking: jest.fn(),
             updateBooking: jest.fn(),
+            getActivityLogs: jest.fn(),
           },
         },
       ],
@@ -70,5 +71,10 @@ describe('BookingsController', () => {
     const dto = { status: 'ongoing' } as const;
     controller.updateBooking({ id: 'u1' }, dto as any, 'BK-20260913-ABCDEF');
     expect(service.updateBooking).toHaveBeenCalledWith('u1', 'BK-20260913-ABCDEF', dto);
+  });
+
+  it('getActivityLogs memanggil service dengan code dari param', () => {
+    controller.getActivityLogs('BK-20260913-ABCDEF');
+    expect(service.getActivityLogs).toHaveBeenCalledWith('BK-20260913-ABCDEF');
   });
 });

@@ -19,7 +19,17 @@ export class BookingRepository {
     }
 
     getAllBookingDetails(code: string) {
-        return this.prisma.bookings.findUnique({ where: { code } });
+        return this.prisma.bookings.findUnique({
+            where: { code },
+            include: {
+                rooms: {
+                    select: { name: true, type: true, price: true, image: true },
+                },
+                users: {
+                    select: { full_name: true, nickname: true, contact: true, email: true },
+                },
+            },
+        });
     }
 
     getAllBookings(userId: string) {

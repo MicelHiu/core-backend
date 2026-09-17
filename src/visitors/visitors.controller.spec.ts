@@ -16,7 +16,7 @@ describe('VisitorsController', () => {
         {
           provide: VisitorsService,
           useValue: {
-            checkIn: jest.fn(),
+            autoCheckIn: jest.fn(),
             getStats: jest.fn(),
             findAll: jest.fn(),
             findById: jest.fn(),
@@ -39,12 +39,6 @@ describe('VisitorsController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
-  });
-
-  it('checkIn memanggil service dengan dto', () => {
-    const dto = { booking_code: 'BK-20260913-ABCDEF', guest_name: 'Budi' };
-    controller.checkIn(dto as any);
-    expect(service.checkIn).toHaveBeenCalledWith(dto);
   });
 
   it('getStats memanggil service dengan query', () => {

@@ -7,9 +7,11 @@ import { BookingRepository } from './bookings.repository';
 import { CartsModule } from 'src/carts/carts.module';
 import { CartsRepository } from 'src/carts/carts.repository';
 import { DiscountsModule } from 'src/discounts/discounts.module';
+import { VisitorsModule } from 'src/visitors/visitors.module';
+import { ActivityLogsModule } from 'src/activity-logs/activity-logs.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, CartsModule, DiscountsModule],
+  imports: [PrismaModule, AuthModule, CartsModule, DiscountsModule, VisitorsModule, ActivityLogsModule],
   controllers: [BookingsController],
   providers: [BookingsService, BookingRepository],
 })

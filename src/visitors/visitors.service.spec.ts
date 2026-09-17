@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { VisitorsService } from './visitors.service';
 import { VisitorsRepository } from './visitors.repository';
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
@@ -26,6 +26,7 @@ describe('VisitorsService', () => {
           useValue: {
             getBookingStatus: jest.fn(),
             createVisitor: jest.fn(),
+            findByBookingCode: jest.fn(),
             findById: jest.fn(),
             findAll: jest.fn(),
             findCheckedInInRange: jest.fn(),
@@ -47,38 +48,28 @@ describe('VisitorsService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('checkIn', () => {
-    const dto = { booking_code: 'BK-20260913-ABCDEF', guest_name: 'Budi' };
+  describe('autoCheckIn', () => {
+    const booking = { code: 'BK-20260913-ABCDEF', user_id: 'u1', guest_name: 'Budi' };
 
-    it('throw NotFoundException kalau booking tidak ditemukan', async () => {
-      repository.getBookingStatus.mockResolvedValue(null);
-
-      await expect(service.checkIn(dto as any)).rejects.toThrow(NotFoundException);
-    });
-
-    it('throw BadRequestException kalau status booking bukan confirmed/ongoing', async () => {
-      repository.getBookingStatus.mockResolvedValue({ status: 'canceled', user_id: 'u1' } as any);
-
-      await expect(service.checkIn(dto as any)).rejects.toThrow(BadRequestException);
-    });
-
-    it('berhasil check-in kalau status confirmed', async () => {
-      repository.getBookingStatus.mockResolvedValue({ status: 'confirmed', user_id: 'u1' } as any);
+    it('membuat visitor baru kalau belum pernah check-in untuk booking ini', async () => {
+      repository.findByBookingCode.mockResolvedValue(null);
       repository.createVisitor.mockResolvedValue(fakeVisitor as any);
 
-      const result = await service.checkIn(dto as any);
+      const result = await service.autoCheckIn(booking);
 
       expect(result).toEqual(fakeVisitor);
       expect(repository.createVisitor).toHaveBeenCalledWith(
-        expect.objectContaining({ booking_code: dto.booking_code, guest_name: dto.guest_name, user_id: 'u1' }),
+        expect.objectContaining({ booking_code: booking.code, guest_name: booking.guest_name, user_id: booking.user_id }),
       );
     });
 
-    it('berhasil check-in kalau status ongoing', async () => {
-      repository.getBookingStatus.mockResolvedValue({ status: 'ongoing', user_id: 'u1' } as any);
-      repository.createVisitor.mockResolvedValue(fakeVisitor as any);
+    it('tidak membuat visitor baru (idempotent) kalau sudah pernah check-in', async () => {
+      repository.findByBookingCode.mockResolvedValue(fakeVisitor as any);
 
-      await expect(service.checkIn(dto as any)).resolves.toEqual(fakeVisitor);
+      const result = await service.autoCheckIn(booking);
+
+      expect(result).toEqual(fakeVisitor);
+      expect(repository.createVisitor).not.toHaveBeenCalled();
     });
   });
 
