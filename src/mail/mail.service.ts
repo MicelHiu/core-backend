@@ -13,6 +13,11 @@ export class MailService {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS,
             },
+            // default nodemailer bisa sampai 2-10 menit — kalau SMTP diblokir/salah,
+            // biar gagal cepat daripada bikin request yang manggil kita menggantung
+            connectionTimeout: 10_000,
+            greetingTimeout: 10_000,
+            socketTimeout: 15_000,
         })
         : null;
 
@@ -24,12 +29,17 @@ export class MailService {
         }
 
         const safeName = name.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-        await this.transporter.sendMail({
-            from: process.env.MAIL_FROM ?? process.env.SMTP_USER,
-            to,
-            subject: 'Reset your Core password',
-            text: `Hi ${name},\n\nUse this link to reset your password (valid for 15 minutes):\n${link}\n\nIf you didn't request this, you can ignore this email.`,
-            html: `<p>Hi ${safeName},</p><p>Use this link to reset your password (valid for 15 minutes):</p><p><a href="${link}">Reset password</a></p><p>If you didn't request this, you can ignore this email.</p>`,
-        });
+        try {
+            await this.transporter.sendMail({
+                from: process.env.MAIL_FROM ?? process.env.SMTP_USER,
+                to,
+                subject: 'Reset your Core password',
+                text: `Hi ${name},\n\nUse this link to reset your password (valid for 15 minutes):\n${link}\n\nIf you didn't request this, you can ignore this email.`,
+                html: `<p>Hi ${safeName},</p><p>Use this link to reset your password (valid for 15 minutes):</p><p><a href="${link}">Reset password</a></p><p>If you didn't request this, you can ignore this email.</p>`,
+            });
+        } catch (err) {
+            // gagal kirim email tidak boleh sampai menggagalkan/menggantung request pemanggilnya
+            this.logger.error(`Failed to send password reset email to ${to}`, err instanceof Error ? err.stack : err);
+        }
     }
 }

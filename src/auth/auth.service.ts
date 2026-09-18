@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { AuthRepository } from './auth.repository';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
@@ -9,6 +9,8 @@ import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly authRepository: AuthRepository,
     private readonly jwt: JwtService,
@@ -53,7 +55,10 @@ export class AuthService {
             );
             const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
             const link = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
-            await this.mail.sendPasswordReset(user.email, user.full_name, link);
+            // sengaja tidak di-await — proses kirim email tidak boleh menahan response ini
+            this.mail.sendPasswordReset(user.email, user.full_name, link).catch((err) => {
+                this.logger.error(`sendPasswordReset failed for ${user.email}`, err instanceof Error ? err.stack : err);
+            });
         }
         return { message: 'If the email is registered, a reset link has been sent.' };
     }
