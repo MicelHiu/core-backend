@@ -108,11 +108,14 @@ export class CartsService {
         const timeStart = dto.time_start ?? this.formatTime(oldCart.time_start);
         const timeEnd = dto.time_end ?? this.formatTime(oldCart.time_end);
         const quantity = dto.quantity ?? oldCart.quantity;
-        // discount_id dikirim -> revalidasi ke tabel discounts.
-        // discount_id tidak dikirim -> pakai discount_value lama dari cart (kalau ada).
-        const discountValue = dto.discount_id
-            ? await this.resolveDiscountValue(dto.discount_id)
-            : (oldCart.discount_value ?? undefined);
+        // discount_id tidak dikirim (undefined) -> pakai discount_value lama dari cart (kalau ada).
+        // discount_id dikirim string -> revalidasi ke tabel discounts.
+        // discount_id dikirim null -> user melepas promo, hapus discount_value.
+        const discountValue = dto.discount_id === undefined
+            ? (oldCart.discount_value ?? undefined)
+            : dto.discount_id
+                ? await this.resolveDiscountValue(dto.discount_id)
+                : undefined;
 
         const durationHours = this.calculateDurationHours(timeStart, timeEnd);
         const totalPrice = room ? this.calculateTotalPrice(room.price, durationHours, quantity, discountValue) : oldCart.total_price;

@@ -15,10 +15,10 @@ export class UpdateCartDto {
     @IsOptional()
     quantity?: number;
 
-    @ApiProperty({ example: 'b3f1c1a0-1234-4a5b-9c0d-1234567890ab', required: false })
+    @ApiProperty({ example: 'b3f1c1a0-1234-4a5b-9c0d-1234567890ab', required: false, nullable: true })
     @IsUUID()
     @IsOptional()
-    discount_id?: string;
+    discount_id?: string | null;
 
     @ApiProperty({ example: '2026-09-20', required: false })
     @Type(() => Date)
