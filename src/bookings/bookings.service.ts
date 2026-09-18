@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { BookingRepository } from './bookings.repository';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CartsRepository } from 'src/carts/carts.repository';
+import { RoomsRepository } from 'src/rooms/rooms.repository';
 import { Decimal } from '@prisma/client/runtime/index-browser';
 import { booking_status } from 'generated/prisma/enums';
 import { UpdateBookingDto } from './dto/update-booking.dto';
@@ -15,6 +16,7 @@ export class BookingsService {
     constructor(
         private readonly bookingsRepository: BookingRepository,
         private readonly cartsRepository: CartsRepository,
+        private readonly roomsRepository: RoomsRepository,
         private readonly discountsRepository: DiscountsRepository,
         private readonly visitorsService: VisitorsService,
         private readonly activityLogsRepository: ActivityLogsRepository,
@@ -84,6 +86,15 @@ export class BookingsService {
                     'Discount applied to this cart is no longer active or has expired. Please update your cart.',
                 );
             }
+        }
+
+        // 2.5. Cek sisa stok room untuk tanggal yang dipilih
+        const room = await this.roomsRepository.getRoomById(cart.room_id);
+        if (!room) throw new NotFoundException('Room not found');
+
+        const bookedQty = await this.roomsRepository.getBookedQuantity(cart.room_id, cart.date_play);
+        if (bookedQty + cart.quantity > room.stock) {
+            throw new BadRequestException('Room is fully booked for the selected date');
         }
 
         // 3. Generate kode booking unik

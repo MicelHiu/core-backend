@@ -15,6 +15,18 @@ export class RoomsRepository {
         return this.prisma.rooms.findUnique({where: {id}});
     }
 
+    async getBookedQuantity(roomId: string, date: Date): Promise<number> {
+        const result = await this.prisma.bookings.aggregate({
+            _sum: { quantity: true },
+            where: {
+                room_id: roomId,
+                date_play: date,
+                status: { in: ['confirmed', 'ongoing', 'completed'] },
+            },
+        });
+        return result._sum.quantity ?? 0;
+    }
+
     async patchRoom(id: string, dto: UpdateRoomDto) {
         const currentData = await this.getRoomById(id);
         if(!currentData) return undefined;
