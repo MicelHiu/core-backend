@@ -39,4 +39,8 @@ export class AuthService {
         const payload = { sub: user.id, role: user.role };
         return { access_token: await this.jwt.signAsync(payload)}
     }
+
+    async lookupEmail(email: string) {
+        return this.authRepository.getEmail(email);
+    }
 }
