@@ -9,8 +9,6 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth-guard';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('discounts')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('discounts')
 export class DiscountsController {
   constructor(private readonly discountsService: DiscountsService) {}
@@ -35,6 +33,8 @@ export class DiscountsController {
     return this.discountsService.createDiscount(dto);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   @ApiOperation({ summary: 'Update a discount (admin can update any field, other roles limited)' })
   @ApiParam({ name: 'id', description: 'Discount id' })
