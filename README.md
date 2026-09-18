@@ -1,101 +1,98 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/EdN1T4tj)
-link postman = https://web.postman.co/workspace/My-Workspace~81e0c73e-d1bb-4654-88ad-474f2802ca1a/collection/56609845-9733df1d-ec67-4e68-b8df-a382e6622d8c?action=share&source=copy-link&creator=56609845
+# CORE-BACKEND
 
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
-
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
+## SETUP
+### 1. Clone & Install
 ```bash
-$ npm install
+git clone https://github.com/Revou-FSSE-Feb26/crack-be-MicelHiu.git
+cd crack-be-MicelHiu
+npm install
 ```
+### 2. Environment Variables
+.env.example
+```bash
+DATABASE_URL="postgresql://postgres:<your password>@<your-host>:5432/postgres"
+JWT_SECRET="<long_random_string>"
 
-## Compile and run the project
+# optional — without this, forgot-password just logs the reset link instead of emailing it
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="<sender email>"
+SMTP_PASS="<app password>"
+MAIL_FROM="<sender email>"
 
+# optional — the deployed frontend domain, used for CORS & the password reset link
+FRONTEND_URL="https://core-six-gold.vercel.app"
+```
+copy ".env.example" to ".env" file
+```bash
+cp .env.example .env
+```
+### 3. Database Migration
+```bash
+npx prisma migrate dev
+npx prisma generate
+npx prisma studio
+```
+### 4. Run the application
 ```bash
 # development
-$ npm run start
+npm run start:dev
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+# production
+npm run build
+npm run start
 ```
+---
+## ERD
+![ERD](docs/erd.png)
+---
+## ARCHITECTURE OVERVIEW
+### Layered structure
+Every domain (auth, users, rooms, carts, bookings, discounts, visitors, activity-logs) follows the same 3-layer NestJS pattern:
+Controller  → receives the HTTP request, validates the DTO, delegates to the Service
+Service     → business logic (ownership checks, status-transition validation, stock checks, etc.)
+Repository  → the only layer that talks to Prisma / the database
 
-## Run tests
+The Controller never calls Prisma directly. Calls flow through Service → Repository instead, which keeps query logic easy to change without touching the HTTP layer.
 
-```bash
-# unit tests
-$ npm run test
+### Modules
+| Module | Responsibility |
+|---|---|
+| AuthModule | register/login, forgot/reset password via an emailed token, JWT issuing, hosts JwtAuthGuard & RolesGuard so they can be exported to other modules |
+| UsersModule | the currently logged-in user's data (`/users/current`) |
+| RoomsModule | room CRUD (PC/PS), computes remaining stock per day |
+| CartsModule | a user's booking cart before checkout |
+| BookingsModule | checks out a cart into a booking, status transitions (confirmed → ongoing → completed / canceled), user-initiated cancel |
+| DiscountsModule | promo/voucher CRUD, validates the active period |
+| VisitorsModule | visitor listing & stats, search by guest name / booking code / customer |
+| ActivityLogsModule | history of booking status changes |
+| MailModule | nodemailer wrapper, used by AuthModule to send the password reset link |
+| PrismaModule | wraps PrismaService, imported by every module that needs DB access |
 
-# e2e tests
-$ npm run test:e2e
+### Request pipeline
+Request
+  → LoggerMiddleware (global, every route — app.module.ts)
+  → ThrottlerGuard (per-route, on sensitive auth endpoints — rate limiting)
+  → JwtAuthGuard (per-controller/route — verifies the Bearer token, populates req.user)
+  → RolesGuard (specific routes — checks req.user.role against @Roles() metadata)
+  → Controller → Service → Repository → Prisma → PostgreSQL
 
-# test coverage
-$ npm run test:cov
-```
+### Auth
+- JwtAuthGuard reads the `Authorization: Bearer <token>` header, verifies it with JwtService, then injects the payload into `req.user` (consumed via the `@CurrentUser()` decorator). A token carrying a `purpose` (password reset) is deliberately rejected here, so it can't be reused as a login token.
+- Role-based access uses `@Roles('admin')` (metadata) + `RolesGuard` (reads that metadata via Reflector).
+- Forgot-password never reveals whether an email is registered: the response is always the same, and the reset link (a JWT valid for 15 minutes) is only emailed if the user actually exists.
 
-## Deployment
+### Database
+- The schema is defined in `prisma/schema.prisma`, accessed through `PrismaService` (a PrismaClient wrapper) injected into each `*.repository.ts`.
+- Main relationships: `users` 1—N `carts`/`bookings`/`visitors`/`activity_logs`; `rooms` 1—N `carts`/`bookings`; `discounts` 1—N `carts`/`bookings`; `bookings` 1—N `visitors`/`activity_logs`.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## KNOWN LIMITATIONS
+- **No pagination.** `GET /rooms`, `GET /carts`, `GET /bookings`, `GET /discounts`, and `GET /visitors` return every row (`findMany()` with no `take`/`skip`) — this will become a problem as data grows.
+- **A room can't be deleted once it has a booking** (to keep transaction history intact) — admins should set its stock to 0 instead.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## TECH STACK
+- Framework: Nest.js, Prisma
+- Database: PostgreSQL
+- Deployments: Railway
+- Link Production: [railway production](https://core-backend-production-d8cd.up.railway.app)
+- Link API: [Swagger docs](https://core-backend-production-d8cd.up.railway.app/api-docs)
