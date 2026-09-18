@@ -21,7 +21,8 @@ export class VisitorsService {
     async findAll(query: VisitorListQueryDto) {
         const from = query.from ? new Date(query.from) : undefined;
         const to = query.to ? new Date(query.to) : undefined;
-        const bookings = await this.visitorsRepository.findAll(from, to);
+        const search = query.search?.trim() || undefined;
+        const bookings = await this.visitorsRepository.findAll(from, to, search);
 
         return bookings.map((b) => {
             const visitor = b.visitors[0];

@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsIn, IsInt, IsISO8601, IsOptional, Max, Min } from "class-validator";
+import { IsIn, IsInt, IsISO8601, IsOptional, IsString, Max, MaxLength, Min } from "class-validator";
 import { Type } from "class-transformer";
 
 export class VisitorListQueryDto {
@@ -12,6 +12,12 @@ export class VisitorListQueryDto {
     @IsISO8601()
     @IsOptional()
     to?: string;
+
+    @ApiProperty({ example: 'budi', required: false, description: 'Search guest name, booking code, or customer name/email' })
+    @IsString()
+    @MaxLength(100)
+    @IsOptional()
+    search?: string;
 }
 
 export class VisitorStatsQueryDto {

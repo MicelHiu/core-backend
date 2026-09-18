@@ -28,7 +28,7 @@ export class VisitorsRepository {
         });
     }
 
-    findAll(from?: Date, to?: Date) {
+    findAll(from?: Date, to?: Date, search?: string) {
         return this.prisma.bookings.findMany({
             where: {
                 ...(from || to ? {
@@ -36,6 +36,15 @@ export class VisitorsRepository {
                         ...(from && { gte: from }),
                         ...(to && { lte: to }),
                     },
+                } : {}),
+                // cari berdasarkan nama tamu, kode booking, atau nama/email akun pemesan
+                ...(search ? {
+                    OR: [
+                        { guest_name: { contains: search, mode: 'insensitive' } },
+                        { code: { contains: search, mode: 'insensitive' } },
+                        { users: { full_name: { contains: search, mode: 'insensitive' } } },
+                        { users: { email: { contains: search, mode: 'insensitive' } } },
+                    ],
                 } : {}),
             },
             include: {

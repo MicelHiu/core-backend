@@ -35,12 +35,26 @@ export class RoomsRepository {
         return result._sum.quantity ?? 0;
     }
 
-    async patchRoom(id: string, dto: UpdateRoomDto) {
-        const currentData = await this.getRoomById(id);
-        if(!currentData) return undefined;
+    createRoom(dto: CreateRoomDto) {
+        return this.prisma.rooms.create({ data: dto });
+    }
+
+    updateRoom(id: string, dto: UpdateRoomDto) {
         return this.prisma.rooms.update({
             data: dto,
             where: {id},
         });
+    }
+
+    countBookings(roomId: string) {
+        return this.prisma.bookings.count({ where: { room_id: roomId } });
+    }
+
+    // cart yang masih nyangkut ke room ini ikut dihapus (FK carts -> rooms = Restrict)
+    deleteRoom(id: string) {
+        return this.prisma.$transaction([
+            this.prisma.carts.deleteMany({ where: { room_id: id } }),
+            this.prisma.rooms.delete({ where: { id } }),
+        ]);
     }
 }

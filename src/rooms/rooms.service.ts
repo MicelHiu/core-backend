@@ -1,5 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { RoomsRepository } from './rooms.repository';
+import { CreateRoomDto } from './dto/create-room.dto';
+import { UpdateRoomDto } from './dto/update-room.dto';
 
 function startOfToday(): Date {
   const d = new Date();
@@ -27,5 +29,30 @@ export class RoomsService {
     const room = await this.roomsRepository.getRoomById(id);
     if(!room) throw new NotFoundException("Room Not Found");
     return this.withStockToday(room);
+  }
+
+  // duplikat id ditangani PrismaExceptionFilter (P2002 -> 409)
+  createRoom(dto: CreateRoomDto) {
+    return this.roomsRepository.createRoom(dto);
+  }
+
+  async updateRoom(id: string, dto: UpdateRoomDto) {
+    const room = await this.roomsRepository.getRoomById(id);
+    if(!room) throw new NotFoundException("Room Not Found");
+    return this.roomsRepository.updateRoom(id, dto);
+  }
+
+  async deleteRoom(id: string) {
+    const room = await this.roomsRepository.getRoomById(id);
+    if(!room) throw new NotFoundException("Room Not Found");
+
+    // booking = riwayat transaksi, tidak boleh ikut hilang
+    const bookings = await this.roomsRepository.countBookings(id);
+    if (bookings > 0) {
+      throw new ConflictException(`Room has ${bookings} booking(s) and can't be deleted. Set its stock to 0 instead.`);
+    }
+
+    await this.roomsRepository.deleteRoom(id);
+    return { message: 'Room deleted' };
   }
 }

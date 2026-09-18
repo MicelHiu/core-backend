@@ -74,22 +74,57 @@ describe('VisitorsService', () => {
   });
 
   describe('findAll', () => {
-    it('meneruskan range from/to (sudah di-parse jadi Date) ke repository', () => {
-      repository.findAll.mockReturnValue([fakeVisitor] as any);
+    // repository.findAll mengembalikan bookings (+ relasi visitors), bukan visitors
+    const fakeBooking = {
+      code: 'BK-001',
+      user_id: 'u1',
+      room_id: 'r1',
+      guest_name: 'Budi',
+      date_play: new Date('2026-09-13'),
+      status: 'ongoing',
+      created_at: new Date('2026-09-12T10:00:00.000Z'),
+      visitors: [fakeVisitor],
+    };
 
-      service.findAll({ from: '2026-01-01', to: '2026-09-13' } as any);
+    it('meneruskan range from/to (sudah di-parse jadi Date) ke repository', async () => {
+      repository.findAll.mockResolvedValue([fakeBooking] as any);
+
+      await service.findAll({ from: '2026-01-01', to: '2026-09-13' } as any);
 
       const [from, to] = repository.findAll.mock.calls[0];
       expect(from).toEqual(new Date('2026-01-01'));
       expect(to).toEqual(new Date('2026-09-13'));
     });
 
-    it('meneruskan undefined kalau from/to tidak diisi', () => {
-      repository.findAll.mockReturnValue([] as any);
+    it('meneruskan undefined kalau from/to/search tidak diisi', async () => {
+      repository.findAll.mockResolvedValue([] as any);
 
-      service.findAll({} as any);
+      await service.findAll({} as any);
 
-      expect(repository.findAll).toHaveBeenCalledWith(undefined, undefined);
+      expect(repository.findAll).toHaveBeenCalledWith(undefined, undefined, undefined);
+    });
+
+    it('meneruskan search yang sudah di-trim, dan string kosong dianggap tidak ada', async () => {
+      repository.findAll.mockResolvedValue([] as any);
+
+      await service.findAll({ search: '  budi  ' } as any);
+      await service.findAll({ search: '   ' } as any);
+
+      expect(repository.findAll).toHaveBeenNthCalledWith(1, undefined, undefined, 'budi');
+      expect(repository.findAll).toHaveBeenNthCalledWith(2, undefined, undefined, undefined);
+    });
+
+    it('memetakan booking jadi baris visitor', async () => {
+      repository.findAll.mockResolvedValue([fakeBooking] as any);
+
+      const [row] = await service.findAll({} as any);
+
+      expect(row).toEqual(expect.objectContaining({
+        booking_code: 'BK-001',
+        guest_name: 'Budi',
+        checked_in: fakeVisitor.checked_in,
+        bookings: expect.objectContaining({ code: 'BK-001', status: 'ongoing' }),
+      }));
     });
   });
 

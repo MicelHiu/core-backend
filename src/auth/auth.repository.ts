@@ -44,4 +44,20 @@ export class AuthRepository {
     getUserById(id: string) {
         return this.prisma.users.findUnique({where: {id}});
     }
+
+    // dipakai forgot/reset password: butuh hash password untuk mengikat token reset
+    getUserForReset(where: { email: string } | { id: string }) {
+        return this.prisma.users.findUnique({
+            where,
+            select: { id: true, email: true, full_name: true, password: true },
+        });
+    }
+
+    updatePassword(id: string, hashedPassword: string) {
+        return this.prisma.users.update({
+            where: { id },
+            data: { password: hashedPassword },
+            select: { id: true },
+        });
+    }
 }

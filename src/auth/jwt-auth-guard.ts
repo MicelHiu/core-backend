@@ -16,6 +16,8 @@ export class JwtAuthGuard implements CanActivate {
 
         try {
             const payload = await this.jwt.verifyAsync(token);
+            // token reset password (punya "purpose") tidak boleh dipakai sebagai token login
+            if (payload.purpose) throw new Error('Not an access token');
             req.user = { id: payload.sub, role: payload.role };
             return true;
         } catch (err: any) {

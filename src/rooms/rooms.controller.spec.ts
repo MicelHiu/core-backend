@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import { Test, TestingModule } from '@nestjs/testing';
 import { RoomsController } from './rooms.controller';
 import { RoomsService } from './rooms.service';
+import { JwtAuthGuard } from 'src/auth/jwt-auth-guard';
+import { RolesGuard } from 'src/auth/roles-guard';
+import { Reflector } from '@nestjs/core';
 
 describe('RoomsController', () => {
   let controller: RoomsController;
@@ -16,10 +19,17 @@ describe('RoomsController', () => {
           useValue: {
             getAllRooms: jest.fn(),
             getRoomById: jest.fn(),
+            createRoom: jest.fn(),
+            updateRoom: jest.fn(),
+            deleteRoom: jest.fn(),
           },
         },
       ],
-    }).compile();
+    })
+      // guard diuji terpisah; di sini cukup cek controller meneruskan ke service
+      .overrideGuard(JwtAuthGuard).useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard).useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<RoomsController>(RoomsController);
     service = module.get(RoomsService);
@@ -55,5 +65,23 @@ describe('RoomsController', () => {
       expect(result).toEqual(fakeRoom);
       expect(service.getRoomById).toHaveBeenCalledWith('r1');
     });
+  });
+});
+
+describe('RoomsController admin guards', () => {
+  const reflector = new Reflector();
+  const writeHandlers = ['createRoom', 'updateRoom', 'deleteRoom'] as const;
+
+  it.each(writeHandlers)('%s dilindungi JwtAuthGuard + RolesGuard dengan role admin', (handler) => {
+    const method = RoomsController.prototype[handler];
+    const guards = Reflect.getMetadata('__guards__', method);
+    const roles = reflector.get<string[]>('roles', method);
+
+    expect(guards).toEqual([JwtAuthGuard, RolesGuard]);
+    expect(roles).toEqual(['admin']);
+  });
+
+  it.each(['getAllRooms', 'getRoomById'] as const)('%s tetap publik', (handler) => {
+    expect(Reflect.getMetadata('__guards__', RoomsController.prototype[handler])).toBeUndefined();
   });
 });

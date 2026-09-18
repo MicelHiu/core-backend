@@ -9,7 +9,9 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      'http://localhost:3000'
+      'http://localhost:3000',
+      // domain frontend yang sudah di-deploy (mis. https://core.vercel.app)
+      ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
     ],
     credentials: true,
   })

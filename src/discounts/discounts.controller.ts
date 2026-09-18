@@ -25,7 +25,8 @@ export class DiscountsController {
     return this.discountsService.getDiscountDetails(id);
   }
 
-  @UseGuards(RolesGuard)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post()
   @ApiOperation({ summary: 'Create a new discount (admin only)' })
@@ -34,7 +35,8 @@ export class DiscountsController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @Patch(':id')
   @ApiOperation({ summary: 'Update a discount (admin can update any field, other roles limited)' })
   @ApiParam({ name: 'id', description: 'Discount id' })
@@ -43,7 +45,8 @@ export class DiscountsController {
     return this.discountsService.updateDiscount(id, dto, isAdmin);
   }
 
-  @UseGuards(RolesGuard)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a discount (admin only)' })

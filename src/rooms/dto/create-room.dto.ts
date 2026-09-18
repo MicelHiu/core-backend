@@ -1,40 +1,38 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDecimal, IsNotEmpty, IsNumber, IsString } from "class-validator";
-import { Decimal } from "generated/prisma/internal/prismaNamespace";
+import { IsEnum, IsInt, IsNotEmpty, IsNumber, IsString, IsUrl, Matches, Min } from "class-validator";
+import { rooms_type } from "generated/prisma/enums";
 
 export class CreateRoomDto {
-    @ApiProperty({ example: 'room-001' })
+    @ApiProperty({ example: 'pc-vip-01', description: 'Unique slug: lowercase letters, numbers and dashes' })
+    @IsString()
+    @Matches(/^[a-z0-9-]+$/, { message: 'id may only contain lowercase letters, numbers and dashes' })
+    id!: string;
+
+    @ApiProperty({ example: 'VIP PC Room' })
     @IsNotEmpty()
     @IsString()
-    id!:string;
+    name!: string;
 
-    @ApiProperty({ example: 'Deluxe Room' })
+    @ApiProperty({ example: 'RTX 4080, 240Hz monitor, private booth' })
     @IsNotEmpty()
     @IsString()
-    name!:string;
+    description!: string;
 
-    @ApiProperty({ example: 'A spacious room with sea view' })
-    @IsNotEmpty()
-    @IsString()
-    description!:string;
-
-    @ApiProperty({ example: '500000' })
-    @IsNotEmpty()
-    @IsDecimal()
-    price!:Decimal;
+    @ApiProperty({ example: 25000, description: 'Price per hour (IDR)' })
+    @IsNumber()
+    @Min(0)
+    price!: number;
 
     @ApiProperty({ example: 'https://example.com/room.jpg' })
-    @IsNotEmpty()
-    @IsString()
+    @IsUrl()
     image!: string;
 
-    @ApiProperty({ example: 'deluxe' })
-    @IsNotEmpty()
-    @IsString()
-    category!:string;
+    @ApiProperty({ enum: rooms_type, example: 'PC' })
+    @IsEnum(rooms_type)
+    type!: rooms_type;
 
-    @ApiProperty({ example: 10 })
-    @IsNotEmpty()
-    @IsNumber()
-    quantity!:number;
+    @ApiProperty({ example: 10, description: 'Number of seats' })
+    @IsInt()
+    @Min(0)
+    stock!: number;
 }

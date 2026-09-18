@@ -59,6 +59,13 @@ export class BookingsController {
     return this.bookingsService.createBooking(user.id, dto);
   }
 
+  @Patch(':code/cancel')
+  @ApiOperation({ summary: "Cancel the current user's own booking (only while status is 'confirmed')" })
+  @ApiParam({ name: 'code', description: 'Booking code' })
+  cancelBooking(@CurrentUser() user: {id: string}, @Param('code') code: string) {
+    return this.bookingsService.cancelBooking(user.id, code);
+  }
+
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Patch(':code')

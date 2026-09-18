@@ -7,6 +7,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthRepository } from './auth.repository';
 import { JwtAuthGuard } from './jwt-auth-guard';
 import { RolesGuard } from './roles-guard';
+import { MailModule } from 'src/mail/mail.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { RolesGuard } from './roles-guard';
       },
     }),
     PrismaModule,
+    MailModule,
     ThrottlerModule.forRoot([{
       ttl: 60000,
       limit: 5,

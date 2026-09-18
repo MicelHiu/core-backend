@@ -173,6 +173,24 @@ export class BookingsService {
         return this.mapBooking(updated);
     }
 
+    // Customer hanya boleh cancel booking miliknya sendiri yang masih 'confirmed'
+    async cancelBooking(userId: string, code: string) {
+        const existing = await this.bookingsRepository.getBookingDetails(code, userId);
+        if (!existing) throw new NotFoundException('Booking not found');
+        if (existing.status !== 'confirmed') {
+            throw new BadRequestException(`Only confirmed bookings can be canceled (current status: '${existing.status}')`);
+        }
+
+        const updated = await this.bookingsRepository.updateBooking(code, { status: 'canceled' });
+        await this.activityLogsRepository.create({
+            booking_code: code,
+            admin_id: userId,
+            status: 'canceled',
+            note: 'Canceled by customer',
+        });
+        return this.mapBooking(updated);
+    }
+
     async getActivityLogs(code: string) {
         const booking = await this.bookingsRepository.getAllBookingDetails(code);
         if (!booking) throw new NotFoundException('Booking not found');

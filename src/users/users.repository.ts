@@ -11,12 +11,4 @@ export class UsersRepository {
             omit: {password: true},
         });
     }
-
-    updatePassword(id: string, hashedPassword: string) {
-        return this.prisma.users.update({
-            where: { id },
-            data: { password: hashedPassword },
-            omit: { password: true },
-        });
-    }
 }
