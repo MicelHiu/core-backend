@@ -12,7 +12,9 @@ export class RoomsService {
   constructor(private readonly roomsRepository: RoomsRepository) {}
 
   private async withStockToday<T extends { id: string; stock: number }>(room: T) {
-    const booked = await this.roomsRepository.getBookedQuantity(room.id, startOfToday());
+    const now = new Date();
+    const nowTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const booked = await this.roomsRepository.getBookedQuantity(room.id, startOfToday(), nowTime, nowTime);
     return { ...room, stock_today: Math.max(room.stock - booked, 0) };
   }
 

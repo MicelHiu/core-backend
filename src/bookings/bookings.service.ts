@@ -92,7 +92,12 @@ export class BookingsService {
         const room = await this.roomsRepository.getRoomById(cart.room_id);
         if (!room) throw new NotFoundException('Room not found');
 
-        const bookedQty = await this.roomsRepository.getBookedQuantity(cart.room_id, cart.date_play);
+        const bookedQty = await this.roomsRepository.getBookedQuantity(
+            cart.room_id,
+            cart.date_play,
+            this.formatTime(cart.time_start),
+            this.formatTime(cart.time_end),
+        );
         if (bookedQty + cart.quantity > room.stock) {
             throw new BadRequestException('Room is fully booked for the selected date');
         }

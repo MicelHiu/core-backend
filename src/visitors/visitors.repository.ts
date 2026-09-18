@@ -29,19 +29,19 @@ export class VisitorsRepository {
     }
 
     findAll(from?: Date, to?: Date) {
-        return this.prisma.visitors.findMany({
+        return this.prisma.bookings.findMany({
             where: {
                 ...(from || to ? {
-                    checked_in: {
+                    date_play: {
                         ...(from && { gte: from }),
                         ...(to && { lte: to }),
                     },
                 } : {}),
             },
             include: {
-                bookings: { select: { code: true, room_id: true, date_play: true, status: true } },
+                visitors: true,
             },
-            orderBy: { checked_in: 'desc' },
+            orderBy: { date_play: 'desc' },
         });
     }
 

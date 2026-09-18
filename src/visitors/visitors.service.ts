@@ -18,10 +18,23 @@ export class VisitorsService {
         });
     }
 
-    findAll(query: VisitorListQueryDto) {
+    async findAll(query: VisitorListQueryDto) {
         const from = query.from ? new Date(query.from) : undefined;
         const to = query.to ? new Date(query.to) : undefined;
-        return this.visitorsRepository.findAll(from, to);
+        const bookings = await this.visitorsRepository.findAll(from, to);
+
+        return bookings.map((b) => {
+            const visitor = b.visitors[0];
+            return {
+                id: visitor?.id ?? b.code,
+                booking_code: b.code,
+                user_id: b.user_id,
+                guest_name: b.guest_name,
+                checked_in: visitor?.checked_in ?? null,
+                created_at: visitor?.created_at ?? b.created_at,
+                bookings: { code: b.code, room_id: b.room_id, date_play: b.date_play, status: b.status },
+            };
+        });
     }
 
     async findById(id: string) {

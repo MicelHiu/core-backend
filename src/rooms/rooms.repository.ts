@@ -15,13 +15,21 @@ export class RoomsRepository {
         return this.prisma.rooms.findUnique({where: {id}});
     }
 
-    async getBookedQuantity(roomId: string, date: Date): Promise<number> {
+    private toTimeDate(time: string): Date {
+        return new Date(`1970-01-01T${time}:00.000Z`);
+    }
+
+    async getBookedQuantity(roomId: string, date: Date, rangeStart: string, rangeEnd: string): Promise<number> {
+        const start = this.toTimeDate(rangeStart);
+        const end = this.toTimeDate(rangeEnd);
         const result = await this.prisma.bookings.aggregate({
             _sum: { quantity: true },
             where: {
                 room_id: roomId,
                 date_play: date,
                 status: { in: ['confirmed', 'ongoing', 'completed'] },
+                time_start: { lt: end },
+                time_end: { gt: start },
             },
         });
         return result._sum.quantity ?? 0;
