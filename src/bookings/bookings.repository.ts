@@ -34,7 +34,12 @@ export class BookingRepository {
 
     getAllBookings(userId: string) {
         return this.prisma.bookings.findMany({
-            where: { user_id: userId }
+            where: { user_id: userId },
+            include: {
+                rooms: {
+                    select: { name: true, type: true, price: true, image: true, stock: true },
+                },
+            },
         });
     }
 
