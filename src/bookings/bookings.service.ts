@@ -10,6 +10,8 @@ import { identity } from 'rxjs';
 import { DiscountsRepository } from 'src/discounts/discounts.repository';
 import { VisitorsService } from 'src/visitors/visitors.service';
 import { ActivityLogsRepository } from 'src/activity-logs/activity-logs.repository';
+import { UsersRepository } from 'src/users/users.repository';
+import { calculatePointsEarned } from './points.util';
 
 @Injectable()
 export class BookingsService {
@@ -20,6 +22,7 @@ export class BookingsService {
         private readonly discountsRepository: DiscountsRepository,
         private readonly visitorsService: VisitorsService,
         private readonly activityLogsRepository: ActivityLogsRepository,
+        private readonly usersRepository: UsersRepository,
     ) {}
     private toTimeDate(date: Date): string {
         return date.toISOString().substring(11, 16);
@@ -31,10 +34,13 @@ export class BookingsService {
     }
 
     private mapBooking(booking: any) {
+        const time_start = this.toTimeDate(booking.time_start);
+        const time_end = this.toTimeDate(booking.time_end);
         return {
             ...booking,
-            time_start: this.toTimeDate(booking.time_start),
-            time_end: this.toTimeDate(booking.time_end),
+            time_start,
+            time_end,
+            points_earned: calculatePointsEarned(booking.quantity, time_start, time_end),
         };
     }
 
@@ -126,6 +132,14 @@ export class BookingsService {
         // 4. Cart sudah "dipindah" jadi booking → hapus dari cart
         await this.cartsRepository.deleteCart(dto.cart_id, userId);
 
+        // 5. Reward points: 10 poin per jam per kursi
+        const pointsEarned = calculatePointsEarned(
+            cart.quantity,
+            this.formatTime(cart.time_start),
+            this.formatTime(cart.time_end),
+        );
+        await this.usersRepository.incrementPoints(userId, pointsEarned);
+
         return this.mapBooking(booking);
     }
 
@@ -182,6 +196,15 @@ export class BookingsService {
         }
 
         const updated = await this.bookingsRepository.updateBooking(code, { status: 'canceled' });
+
+        // Pengurangan points yang sudah didapat dari booking ini
+        const pointsToDeduct = calculatePointsEarned(
+            existing.quantity,
+            this.formatTime(existing.time_start),
+            this.formatTime(existing.time_end),
+        );
+        await this.usersRepository.incrementPoints(userId, -pointsToDeduct);
+
         await this.activityLogsRepository.create({
             booking_code: code,
             admin_id: userId,

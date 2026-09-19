@@ -11,4 +11,11 @@ export class UsersRepository {
             omit: {password: true},
         });
     }
+
+    incrementPoints(userId: string, delta: number) {
+        return this.prisma.users.update({
+            where: { id: userId },
+            data: { points: { increment: delta } },
+        });
+    }
 }

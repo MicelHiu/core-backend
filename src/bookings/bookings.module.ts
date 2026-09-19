@@ -10,9 +10,10 @@ import { RoomsModule } from 'src/rooms/rooms.module';
 import { DiscountsModule } from 'src/discounts/discounts.module';
 import { VisitorsModule } from 'src/visitors/visitors.module';
 import { ActivityLogsModule } from 'src/activity-logs/activity-logs.module';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, CartsModule, RoomsModule, DiscountsModule, VisitorsModule, ActivityLogsModule],
+  imports: [PrismaModule, AuthModule, CartsModule, RoomsModule, DiscountsModule, VisitorsModule, ActivityLogsModule, UsersModule],
   controllers: [BookingsController],
   providers: [BookingsService, BookingRepository],
 })
